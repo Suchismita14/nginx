@@ -1,0 +1,54 @@
+---
+# tasks file for nginx
+- name: Install prerequisites
+  apt:
+    name:
+      - curl
+      - gnupg2
+      - ca-certificates
+      - lsb-release
+      - ubuntu-keyring
+    state: present
+    update_cache: yes
+
+- name: Add Nginx signing key
+  ansible.builtin.shell: |
+    curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
+    | tee /usr/share/keyrings/nginx-archive-keyring.gpg > /dev/null
+
+- name: Verify Nginx signing key fingerprint
+  ansible.builtin.shell: |
+    gpg --dry-run --quiet --no-keyring --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg
+  register: verify_key
+  changed_when: False
+
+- name: Check for correct fingerprint
+  ansible.builtin.assert:
+    that:
+      - "'573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62' in verify_key.stdout"
+    fail_msg: "The fingerprint does not match the expected Nginx key fingerprint."
+
+- name: Add Nginx stable repository
+  ansible.builtin.shell: |
+    echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] \
+    http://nginx.org/packages/ubuntu $(lsb_release -cs) nginx" \
+    | tee /etc/apt/sources.list.d/nginx.list
+
+- name: Set up repository pinning for Nginx
+  ansible.builtin.copy:
+    content: |
+      Package: *
+      Pin: origin "nginx.org"
+      Pin-Priority: 900
+    dest: /etc/apt/preferences.d/99nginx
+    mode: '0644'
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+

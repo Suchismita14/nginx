@@ -1,0 +1,5 @@
+---
+# vars file for nginx
+nginx_repo_url: "http://nginx.org/packages/ubuntu"
+nginx_fingerprint: "573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62"
+

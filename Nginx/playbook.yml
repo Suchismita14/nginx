@@ -1,0 +1,7 @@
+---
+- name: Install Nginx with official Nginx repository
+  hosts: server
+  become: yes
+  roles:
+    - nginx
+
